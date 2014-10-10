@@ -1,5 +1,19 @@
+<<<<<<< HEAD
 * Rishi Saxena;
 
 
 
 *Im testing to see how my branch works…
+=======
+really good video to learn about GITHUB—>http://www.youtube.com/watch?v=0fKg7e37bQE
+
+
+
+/* Authors: Amanda McDermott, Ian Clark, Rishi Saxena */
+
+
+/*Sample SAS CODE…..Looks good, and spacing maintained when copy/pasted!*/ 
+
+
+Data Visionplan;	infile datalines;	input EmployeeID $ VisionPlan $; /* reads in variables using datalines, both are character here*/	datalines;128 YES495 YES828 NO123 YES906 NO;run;
+>>>>>>> master
