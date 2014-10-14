@@ -17,10 +17,33 @@ PROC IMPORT OUT= WORK.US_FA_raw
 RUN;  * this is from using the important wizards... I think it has trouble with reading the date but lets fix it later;
 
 *part 2;
-proc freq data=us_fa_raw;
-tables Program_name;
-run; * 22 unique programs have been funded by usaid;
 
-proc freq data=Us_fa_raw;
-tables Recipient_country*Program_name;
-run; *Can’t get the correct table output, will return to this;
+*A;
+PROC SQL PRINT; 
+SELECT count(distinct Program_name) AS CNT_Program 
+FROM Us_Fa_raw;
+QUIT; *22 unique values exist for program name;
+
+*B;
+
+*C;
+proc means data=us_fa_raw NOPRINT ;
+where Fiscal_year NE 2010;
+var Obligations___US_;
+class Program_name;
+output OUT=Funding sum(Obligations___US_)= total_funding;
+run;
+
+data funding;
+set funding;
+if _type_= 0 then delete;
+run;
+
+
+proc sort data=funding;
+by descending total_funding;
+run;
+
+proc print data=funding (obs=3);
+var program_name Total_funding;
+run;
