@@ -13,8 +13,8 @@ PROC IMPORT OUT= WORK.US_FA_raw
             DBMS=TAB REPLACE;
      GETNAMES=YES;
      DATAROW=2; 
-     GUESSINGROWS=100; 
-RUN;  * this is from using the important wizards... I think it has trouble with reading the date but lets fix it later;
+     GUESSINGROWS=10000; 
+RUN;  * this is from using the important wizards...;
 
 *part 2;
 
