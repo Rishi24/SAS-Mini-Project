@@ -23,4 +23,4 @@ run; * 22 unique programs have been funded by usaid;
 
 proc freq data=Us_fa_raw;
 tables Recipient_country*Program_name;
-run;
+run; *Can’t get the correct table output, will return to this;
