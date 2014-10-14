@@ -6,5 +6,21 @@ really good video to learn about GITHUB—>http://www.youtube.com/watch?v=0fKg7e
 /* Authors: Amanda McDermott, Ian Clark, Rishi Saxena */
 
 
-/*Sample SAS CODE…..Looks good, and spacing maintained when copy/pasted!*/ 
 
+*Part 1;
+PROC IMPORT OUT= WORK.US_FA_raw 
+            DATAFILE= "J:\SAS PROJECT\us_foreign_assistance.txt" 
+            DBMS=TAB REPLACE;
+     GETNAMES=YES;
+     DATAROW=2; 
+     GUESSINGROWS=100; 
+RUN;  * this is from using the important wizards... I think it has trouble with reading the date but lets fix it later;
+
+*part 2;
+proc freq data=us_fa_raw;
+tables Program_name;
+run; * 22 unique programs have been funded by usaid;
+
+proc freq data=Us_fa_raw;
+tables Recipient_country*Program_name;
+run;
