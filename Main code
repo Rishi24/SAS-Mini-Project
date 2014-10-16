@@ -14,17 +14,23 @@ PROC IMPORT OUT= WORK.US_FA_raw
      GETNAMES=YES;
      DATAROW=2; 
      GUESSINGROWS=10000; 
-RUN;  * this is from using the important wizards...;
+RUN;  * this is from using the important wizards... I think it has trouble with reading the date but lets fix it later;
+
+data US_Fa_raw;
+set US_Fa_raw;
+fiscal_year_num=input(Put(fiscal_year,4.), );
+format Fiscal_year_num year4.;
+drop fiscal_year;
+run;
+
+proc contents data=US_FA_Raw;
+run;
 
 *part 2;
-
-*A;
 PROC SQL PRINT; 
 SELECT count(distinct Program_name) AS CNT_Program 
 FROM Us_Fa_raw;
 QUIT; *22 unique values exist for program name;
-
-*B;
 
 *C;
 proc means data=us_fa_raw NOPRINT ;
