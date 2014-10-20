@@ -7,7 +7,6 @@ really good video to learn about GITHUB—>http://www.youtube.com/watch?v=0fKg7e
 
 
 
-*Part 1;
 PROC IMPORT OUT= WORK.US_FA_raw 
             DATAFILE= "J:\SAS PROJECT\us_foreign_assistance.txt" 
             DBMS=TAB REPLACE;
@@ -18,8 +17,7 @@ RUN;  * this is from using the important wizards... I think it has trouble with 
 
 data US_Fa_raw;
 set US_Fa_raw;
-fiscal_year_num=input(Put(fiscal_year,4.), );
-format Fiscal_year_num year4.;
+fiscal_year_num=input(fiscal_year,4.);
 drop fiscal_year;
 run;
 
@@ -32,24 +30,13 @@ SELECT count(distinct Program_name) AS CNT_Program
 FROM Us_Fa_raw;
 QUIT; *22 unique values exist for program name;
 
-*C;
-proc means data=us_fa_raw NOPRINT ;
-where Fiscal_year NE 2010;
-var Obligations___US_;
-class Program_name;
-output OUT=Funding sum(Obligations___US_)= total_funding;
-run;
-
-data funding;
-set funding;
-if _type_= 0 then delete;
-run;
+PROC SQL PRINT outobs=10;
+SELECT count(distinct Program_name) AS CNT_Program 
+group by Country_name
+FROM Us_Fa_raw;
+QUIT;
 
 
-proc sort data=funding;
-by descending total_funding;
-run;
-
-proc print data=funding (obs=3);
-var program_name Total_funding;
+proc sgplot data=Us_fa_raw;
+series x=fiscal_year_num y=Obligations___US_;
 run;
