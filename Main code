@@ -40,3 +40,48 @@ QUIT;
 proc sgplot data=Us_fa_raw;
 series x=fiscal_year_num y=Obligations___US_;
 run;
+
+
+***********************************************************
+* STEP 6;
+
+/* a */
+FILENAME wdicount "J:\WDI_Country.csv";
+PROC IMPORT OUT = WDI_Country (keep=Country_Code Region Short_Name)
+            DATAFILE = wdicount
+            DBMS = CSV REPLACE;
+     GUESSINGROWS = 300; 
+RUN;
+
+/* b */
+FILENAME wdidat "J:\WDI_Data.csv";
+PROC IMPORT OUT = WDI_Data_Main
+	DATAFILE = wdidat
+	DBMS = CSV REPLACE;
+	GETNAMES = YES;
+    DATAROW = 2; 
+    GUESSINGROWS = 10000;
+RUN;
+
+DATA WDI_Data_Clean;
+	SET WDI_Data_Main;
+	IF Indicator_Code = "SP.DYN.LE00.IN" THEN OUTPUT;
+RUN;
+
+DATA WDI_Data (drop=Country_Name Indicator_Name Indicator_Code);
+	SET WDI_Data_Clean;
+RUN;
+
+* STEP 7;
+DATA WDI_Data_LifeEx;
+	SET WDI_Data;
+	AvgLifeEx1961_1970 = MEAN(_1961+_1962+_1963+_1964+_1965+_1966+_1967+_1968+_1969+_1970);
+	AvgLifeEx1971_1980 = MEAN(_1971+_1972+_1973+_1974+_1975+_1976+_1977+_1978+_1979+_1980);
+	AvgLifeEx1981_1990 = MEAN(_1981+_1982+_1983+_1984+_1985+_1986+_1987+_1988+_1989+_1990);
+	AvgLifeEx1991_2000 = MEAN(_1991+_1992+_1993+_1994+_1995+_1996+_1997+_1998+_1999+_2000);
+	AvgLifeEx2001_2010 = MEAN(_2001+_2002+_2003+_2004+_2005+_2006+_2007+_2008+_2009+_2010);
+RUN;
+
+DATA WDI_Data_LifeExDec (keep=Country_Code AvgLifeEx1961_1970 AvgLifeEx1971_1980 AvgLifeEx1981_1990 AvgLifeEx1991_2000 AvgLifeEx2001_2010);
+	SET WDI_Data_LifeEx;
+RUN;
