@@ -1,0 +1,45 @@
+
+PROC IMPORT OUT= WORK.US_FA_raw 
+            DATAFILE= "C:\Users\Student\Documents\My SAS Files\us_foreign_assistance.txt" 
+            DBMS=TAB REPLACE;
+     GETNAMES=YES;
+     DATAROW=2; 
+     GUESSINGROWS=10000; 
+RUN;  * this is from using the important wizards... I think it has trouble with reading the date but lets fix it later;
+
+data US_Fa_raw;
+set US_Fa_raw;
+fiscal_year_num=input(fiscal_year,4.);
+drop fiscal_year;
+run;
+
+proc contents data=US_FA_Raw;
+run;
+
+*part 2;
+PROC SQL PRINT; 
+SELECT count(distinct Program_name) AS CNT_Program 
+FROM Us_Fa_raw;
+QUIT; *22 unique values exist for program name;
+
+PROC SQL PRINT outobs=10;
+SELECT count(distinct Program_name) AS CNT_Program 
+group by Country_name
+FROM Us_Fa_raw;
+QUIT;
+
+
+proc sgplot data=Us_fa_raw;
+series x=fiscal_year_num y=Obligations___US_;
+run;
+*Part 3;
+DATA Economic;
+	SET US_Fa_raw;
+	WHERE (Assistance_Type = 'Economic') and (Unit_Name = 'Constant 2011 $US');
+RUN;
+
+DATA Military;
+	SET US_Fa_raw;
+	WHERE (Assistance_Type = 'Military') and (Unit_Name = 'Constant 2011 $US');
+RUN;
+
