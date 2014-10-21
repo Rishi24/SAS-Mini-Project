@@ -11,17 +11,17 @@ FILENAME wdidat "J:\SAS PROJECT\WDI_csv\WDI_Data.csv";
 
 /************part 1************/
 
-PROC IMPORT OUT= WORK.US_FA_raw 
-            DATAFILE= foreign
-            DBMS=TAB REPLACE;
-     GETNAMES=YES;
-     DATAROW=2; 
-     GUESSINGROWS=10000; 
+PROC IMPORT OUT = WORK.US_FA_raw 
+            DATAFILE = foreign
+            DBMS = TAB REPLACE;
+     GETNAMES = YES;
+     DATAROW = 2; 
+     GUESSINGROWS = 10000; 
 RUN;  * Important wizard code that uses 10000 rows to guess variable types from a tab delimited (.txt) final. Notably fiscal_year is read in as a character variable, but we want it to be numeric;
 
 DATA US_Fa_raw;
 	SET US_Fa_raw;
-	fiscal_year_num=INPUT(fiscal_year,4.); *This step converts fiscal_year from a character variable to a numeric variable named fiscal_year_num and uses 4. (w.) informat;
+	fiscal_year_num = INPUT(fiscal_year,4.); *This step converts fiscal_year from a character variable to a numeric variable named fiscal_year_num and uses 4. (w.) informat;
 	DROP fiscal_year; *drop character values for year;
 RUN;
 
@@ -41,7 +41,7 @@ QUIT; *Ends sql connection to data set;
 
 * B;
 
-PROC SQL PRINT OUTOBS=10; /*procedure to open a sql connection to the sas Data set Us_fa_raw. Following until QUiT are commands in SQL language. Outputs the top 10 observations*/
+PROC SQL PRINT OUTOBS = 10; /*procedure to open a sql connection to the sas Data set Us_fa_raw. Following until QUiT are commands in SQL language. Outputs the top 10 observations*/
 	CREATE TABLE Counts As /*sql commands to create a table of counts*/
 	SELECT count(distinct Program_name) AS CNT_Program, /*selects variable recipient_country and the distinct count of program name*/
        recipient_country AS  recipient_country
@@ -50,18 +50,18 @@ PROC SQL PRINT OUTOBS=10; /*procedure to open a sql connection to the sas Data s
 	ORDER by CNT_program Desc; /*orders by decending Program Count*/
 QUIT;
 
-PROC PRINT data=counts;
+PROC PRINT DATA = counts;
 	TITLE "Countries with Largest Number of Different Programs";
 	TITLE2 "Since 1946";
 RUN;
 
 
 * C;
-PROC MEANS DATA=us_fa_raw NOPRINT ;
+PROC MEANS DATA = us_fa_raw NOPRINT ;
 	WHERE (Fiscal_year_num > 2010) AND (Unit_name="Constant 2011 $US"); /*identifies subset of data where fiscal year is greater than 2010 and unit name is constant 2011 $us*/
 	VAR Obligations___US_;
 	CLASS Program_name; /*grouped by program_name*/
-	OUTPUT OUT=Funding sum(Obligations___US_)= total_funding; /*outputs the sum of obligations___US into a data set called Funding with variable total_funding as the sum*/
+	OUTPUT OUT = Funding sum(Obligations___US_)= total_funding; /*outputs the sum of obligations___US into a data set called Funding with variable total_funding as the sum*/
 RUN;
 
 DATA funding;
@@ -70,11 +70,11 @@ DATA funding;
 RUN;
 
 
-PROC SORT DATA=funding;
+PROC SORT DATA = funding;
 	BY descending total_funding; /* sort funding by descending total funding*/
 RUN;
 
-PROC PRINT data=funding (obs=3);
+PROC PRINT DATA = funding (obs=3);
 	VAR program_name Total_funding;
 	TITLE "PROGRAMS WITH MOST FUNDING";
 	TITLE2 "Since 2010";
@@ -82,14 +82,14 @@ RUN;
 
 
 * D;
-PROC MEANS DATA=Us_fa_raw NOPRINT;
+PROC MEANS DATA = Us_fa_raw NOPRINT;
 	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US"); /*subsets data to only include recipient_country as speicifed and Constant 2001 $us as unit name*/
-	OUTPUT out= sumobs sum(Obligations___US_)=total_obligs; /*outputs sum of obligations___us_ as total_obligs to new data set sumobs*/
+	OUTPUT OUT = sumobs sum(Obligations___US_)=total_obligs; /*outputs sum of obligations___us_ as total_obligs to new data set sumobs*/
 	BY Recipient_country fiscal_year_num; /*analysis by recipient country and fiscal_year_num*/
 RUN;
 
 
-PROC SGPANEL DATA=sumobs; /*creates 2 time series plots on same output window paneled by recipient country*/
+PROC SGPANEL DATA = sumobs; /*creates 2 time series plots on same output window paneled by recipient country*/
 	PANELBY Recipient_country;
 	SERIES X=fiscal_year_num Y=total_obligs;
 	LABEL total_obligs= "Obligations in 2011 $US" fiscal_year_num="fiscal Year";
@@ -106,13 +106,13 @@ RUN;
 
 DATA Economic; /*creates data set economics consisting of us_fa_raw subset where assistance type is only economic and unit_name*/
 	SET US_Fa_raw; 
-	WHERE (Assistance_Type = 'Economic') and (Unit_Name = 'Constant 2011 $US'); 
+	WHERE (Assistance_Type = 'Economic') AND (Unit_Name = 'Constant 2011 $US'); 
 RUN;
 
 
 DATA Military; /*creates data set military consisting of us_fa_raw subset where assistance type is only military and unit_name*/
 	SET US_Fa_raw;
-	WHERE (Assistance_Type = 'Military') and (Unit_Name = 'Constant 2011 $US');
+	WHERE (Assistance_Type = 'Military') AND (Unit_Name = 'Constant 2011 $US');
 RUN;
 
 
@@ -125,25 +125,25 @@ RUN;
 DATA Economic2; /*this data step creates new variable for each decade and removes fiscal years outside the scope of analysis (i.e earlier than 1960 or later than 2010*/
 	SET economic;
 	IF fiscal_year_num <= 1960 then delete; 
-	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70=sum(Obligations___US_); /*each decade is set to the sum of obligations in that decade*/
-	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10=sum(Obligations___US_);
-	ELSE  delete;
+	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70=SUM(Obligations___US_); /*each decade is set to the sum of obligations in that decade*/
+	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80=SUM(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90=SUM(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00=SUM(Obligations___US_);
+	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10=SUM(Obligations___US_);
+	ELSE DELETE;
 RUN;
 
 DATA economic2; /*this data step cleans up all the missing values and converts them to 0*/
 	SET economic2;
 	ARRAY decade (5) dec61_70 dec71_80 dec81_90 dec91_00 dec01_10; /* array of decades allows us to efficiently clean up sas missing numeric values with a DO loop*/
-	DO i=1 to 5;
+	DO i=1 TO 5;
 	IF decade(i)=. THEN decade(i)=0; /* if for any decade a value of . exists it is then coverted to a 0*/
 	END;
 	DROP i; /*drops counter variable*/
 RUN;
 
 PROC MEANS DATA = economic2 noprint MISSING;
-	OUTPUT OUT=Econ3 SUM(dec61_70 dec71_80 dec81_90 dec91_00 dec01_10) =dec61_70E dec71_80E dec81_90E dec91_00E dec01_10E; /*outputs data set of sum of obligations for each decade by recipient country, where the E on the end of decade variable names indicates economic assistance*/
+	OUTPUT OUT = Econ3 SUM(dec61_70 dec71_80 dec81_90 dec91_00 dec01_10) = dec61_70E dec71_80E dec81_90E dec91_00E dec01_10E; /*outputs data set of sum of obligations for each decade by recipient country, where the E on the end of decade variable names indicates economic assistance*/
 	BY recipient_country;
 RUN;
 
@@ -160,11 +160,11 @@ RUN;
 DATA Milt2;
 	SET Military;
 	IF fiscal_year_num <= 1960 THEN DELETE;
-	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80m=sum(Obligations___US_); /*m at the end of decade variable is for military assistance*/
-	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10m=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70m=SUM(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80m=SUM(Obligations___US_); /*m at the end of decade variable is for military assistance*/
+	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90m=SUM(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00m=SUM(Obligations___US_);
+	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10m=SUM(Obligations___US_);
 	ELSE DELETE;
 RUN;
 
@@ -182,7 +182,7 @@ DATA milt2;
 RUN;
 
 PROC MEANS DATA = milt2 noprint MISSING;
-	OUTPUT OUT=milt3 sum(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m ;
+	OUTPUT OUT = milt3 SUM(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m ;
 	BY recipient_country;
 RUN;
 
@@ -288,11 +288,11 @@ RUN;
 
 /************part 9************/
 
-PROC SORT DATA=US_FA (RENAME=(Recipient_country=Short_name)); /* renames recipient_country in Us_FA to Short_name in order to match variable name in WDI set*/
+PROC SORT DATA = US_FA (RENAME=(Recipient_country=Short_name)); /* renames recipient_country in Us_FA to Short_name in order to match variable name in WDI set*/
 	BY Short_name; /* sorts in prep for merge*/
 RUN;
 
-PROC SORT DATA=WDI; /* sort in prep for merge*/
+PROC SORT DATA = WDI; /* sort in prep for merge*/
 	BY SHORT_NAME;
 RUN;
 
