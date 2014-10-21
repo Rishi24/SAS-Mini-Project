@@ -276,7 +276,32 @@ RUN;
 
 * STEP 9;
 
+DATA FINALDATA;
+merge US_FA (IN=A) WDI(IN=B);
+by Short_name;
+IF A and B;
+run;
 
+PROC PRINT DATA = FINALDATA;
+RUN;
+
+Data US_FA_nomatch;
+merge US_FA (IN=A) WDI(IN=B);
+by Short_name;
+IF (A=1 and B=0);
+run;
+
+PROC PRINT DATA = US_FA_nomatch;
+RUN;
+
+Data WDI_nomatch;
+MERGE WDI (IN=A) US_FA(IN=B);
+BY Short_name;
+IF (A=1 and B=0);
+RUN;
+
+PROC PRINT DATA = WDI_nomatch;
+RUN;
 **********
 
 * STEP 10;
