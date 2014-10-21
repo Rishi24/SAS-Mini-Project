@@ -262,6 +262,18 @@ PROC PRINT DATA = WDI;
 RUN;
 
 
+* STEP 10;
+
+/* a */
+PROC CONTENTS DATA = FinalData;
+RUN;
+
+/* b */
+PROC EXPORT DATA = FinalData
+	OUTFILE = "J:\FinalData.csv"
+	DBMS = CSV
+	REPLACE;
+RUN;
 
 
 
