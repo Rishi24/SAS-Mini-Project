@@ -43,11 +43,11 @@ QUIT; *Ends sql connection to data set;
 
 PROC SQL PRINT OUTOBS = 10; /*procedure to open a sql connection to the sas Data set Us_fa_raw. Following until QUiT are commands in SQL language. Outputs the top 10 observations*/
 	CREATE TABLE Counts As /*sql commands to create a table of counts*/
-	SELECT count(distinct Program_name) AS CNT_Program, /*selects variable recipient_country and the distinct count of program name*/
+	SELECT COUNT(distinct Program_name) AS CNT_Program, /*selects variable recipient_country and the distinct count of program name*/
        recipient_country AS  recipient_country
 	FROM Us_fa_raw
-	GROUP by recipient_country /*grouped by recipient_country*/
-	ORDER by CNT_program Desc; /*orders by decending Program Count*/
+	GROUP BY recipient_country /*grouped by recipient_country*/
+	ORDER BY CNT_program Desc; /*orders by decending Program Count*/
 QUIT;
 
 PROC PRINT DATA = counts;
@@ -83,8 +83,8 @@ RUN;
 
 * D;
 PROC MEANS DATA = Us_fa_raw NOPRINT;
-	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US"); /*subsets data to only include recipient_country as speicifed and Constant 2001 $us as unit name*/
-	OUTPUT OUT = sumobs sum(Obligations___US_)=total_obligs; /*outputs sum of obligations___us_ as total_obligs to new data set sumobs*/
+	WHERE Recipient_country IN ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US"); /*subsets data to only include recipient_country as speicifed and Constant 2001 $us as unit name*/
+	OUTPUT OUT = SUMOBS SUM(Obligations___US_)=total_obligs; /*outputs sum of obligations___us_ as total_obligs to new data set sumobs*/
 	BY Recipient_country fiscal_year_num; /*analysis by recipient country and fiscal_year_num*/
 RUN;
 
