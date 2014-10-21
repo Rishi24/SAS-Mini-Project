@@ -113,3 +113,88 @@ DATA Economic2;
 	/*ELSE if fiscal_year_num in (2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010) then*/ dec01_10=obligations___Us_;
 	/*ELSE delete;*/
 RUN;
+
+***********************************************************
+* STEP 6;
+
+/* a */
+FILENAME wdicount "J:\WDI_Country.csv";
+PROC IMPORT OUT = WDI_Country (keep=Country_Code Region Short_Name)
+            DATAFILE = wdicount
+            DBMS = CSV REPLACE;
+     GUESSINGROWS = 300; 
+RUN;
+
+PROC PRINT DATA = WDI_Country;
+	TITLE "Checking WDI Country Data";
+RUN;
+
+/* b */
+FILENAME wdidat "J:\WDI_Data.csv";
+PROC IMPORT OUT = WDI_Data_Main
+			DATAFILE = wdidat
+			DBMS = CSV REPLACE;
+	GETNAMES = YES;
+    DATAROW = 2; 
+	GUESSINGROWS = 10000;
+RUN;
+
+DATA WDI_Data_Clean;
+	SET WDI_Data_Main;
+	IF Indicator_Code = "SP.DYN.LE00.IN" THEN OUTPUT;
+RUN;
+
+DATA WDI_Data (drop=Country_Name Indicator_Name Indicator_Code);
+	SET WDI_Data_Clean;
+RUN;
+
+PROC PRINT DATA = WDI_Data;
+	TITLE "Checking WDI Data";
+RUN;
+
+* STEP 7;
+PROC SORT DATA = WDI_Data;
+	BY Country_Code;
+RUN;
+
+PROC MEANS NOPRINT DATA = WDI_LifeEx;
+	BY Country_Code;
+	OUTPUT OUT = WDI_LifeMeans
+		MEAN(_1961 _1962 _1963 _1964 _1965 _1966 _1967 _1968 _1969 _1970) = _1961M _1962M _1963M _1964M _1965M _1966M _1967M _1968M _1969M _1970M
+		MEAN(_1971 _1972 _1973 _1974 _1975 _1976 _1977 _1978 _1979 _1980) = _1971M _1972M _1973M _1974M _1975M _1976M _1977M _1978M _1979M _1980M
+		MEAN(_1981 _1982 _1983 _1984 _1985 _1986 _1987 _1988 _1989 _1990) = _1981M _1982M _1983M _1984M _1985M _1986M _1987M _1988M _1989M _1990M
+		MEAN(_1991 _1992 _1993 _1994 _1995 _1996 _1997 _1998 _1999 _2000) = _1991M _1992M _1993M _1994M _1995M _1996M _1997M _1998M _1999M _2000M
+		MEAN(_2001 _2002 _2003 _2004 _2005 _2006 _2007 _2008 _2009 _2010) = _2001M _2002M _2003M _2004M _2005M _2006M _2007M _2008M _2009M _2010M;
+RUN;
+
+PROC SORT DATA = WDI_LifeMeans;
+	BY Country_Code;
+RUN;
+
+DATA 
+DATA WDI_Data (keep=Country_Code AvgLifeEx1961_1970 AvgLifeEx1971_1980 AvgLifeEx1981_1990 AvgLifeEx1991_2000 AvgLifeEx2001_2010);
+	SET WDI_LifeExDec;
+	
+RUN;
+
+PROC PRINT DATA = WDI_Data;
+	TITLE "WDI Data with Average Life Expectancy Values Per Decade";
+RUN;
+
+* STEP 8;
+PROC SORT DATA = WDI_Data;
+	BY Country_Code;
+RUN;
+
+PROC SORT DATA = WDI_Country;
+	BY Country_Code;
+RUN;
+
+DATA WDI;
+	MERGE WDI_Data WDI_Country;
+	BY Country_Code;
+RUN;
+
+PROC PRINT DATA = WDI;
+	TITLE "WDI Merged Data";
+RUN;
