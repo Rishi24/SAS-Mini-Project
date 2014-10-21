@@ -10,7 +10,7 @@ RUN;
 
 DATA US_Fa_raw;
 	SET US_Fa_raw;
-	fiscal_year_num=input(fiscal_year,4.);
+	fiscal_year_num=INPUT(fiscal_year,4.);
 	DROP fiscal_year;
 RUN;
 
@@ -31,22 +31,22 @@ PROC SQL PRINT OUTOBS=10;
 	SELECT count(distinct Program_name) AS CNT_Program,
        recipient_country AS  recipient_country
 	FROM Us_fa_raw
-	GROUP by recipient_country
-	ORDER by CNT_program Desc;
+	GROUP BY recipient_country
+	ORDER BY CNT_program Desc;
 QUIT;
 
 
 * C;
-PROC MEANS DATA=us_fa_raw NOPRINT ;
+PROC MEANS DATA = us_fa_raw NOPRINT;
 	WHERE Fiscal_year_num > 2010;
 	VAR Obligations___US_;
 	CLASS Program_name;
-	OUTPUT OUT=Funding sum(Obligations___US_)= total_funding;
+	OUTPUT OUT = Funding sum(Obligations___US_)= total_funding;
 RUN;
 
 DATA funding;
 	SET funding;
-	IF _type_= 0 then delete;
+	IF _type_= 0 THEN delete;
 RUN;
 
 PROC SORT DATA = funding;
@@ -62,7 +62,7 @@ RUN;
 
 DATA Fiscal_TS;
 	SET Us_fa_raw;
-	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US");
+	WHERE Recipient_country IN ("Asia (not specified)"  "Middle East & North Afric") AND Unit_Name= ("Constant 2011 $US");
 	KEEP Recipient_country Unit_name Obligations___US_ FISCAL_year_num;
 RUN;  
 
@@ -71,8 +71,8 @@ PROC SORT DATA = Us_fa_raw;
 RUN;
 
 PROC MEANS DATA = Us_fa_raw NOPRINT;
-	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US");
-	OUTPUT out= sumobs sum(Obligations___US_)=total_obligs;
+	WHERE Recipient_country IN ("Asia (not specified)"  "Middle East & North Afric") AND Unit_Name= ("Constant 2011 $US");
+	OUTPUT OUT = sumobs sum(Obligations___US_) = total_obligs;
 	BY Recipient_country fiscal_year_num;
 RUN;
 
@@ -121,7 +121,7 @@ RUN;
 DATA economic2;
 	SET economic2;
 	ARRAY decade (5) dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
-	DO i=1 to 5;
+	DO i=1 TO 5;
 	IF decade(i)=. THEN decade(i)=0;
 	END;
 RUN;
@@ -159,7 +159,7 @@ DATA milt2;
 	DO i=1 TO 5;
 	IF decade(i)=. THEN decade(i)=0;
 	END;
-run;
+RUN;
 
 PROC MEANS DATA = milt2 noprint MISSING;
 	OUTPUT OUT = milt3 sum(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = / AUTONAME;
@@ -183,7 +183,7 @@ RUN;
 DATA US_Fa;
 	SET us_fa;
 	ARRAY decades (*) dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
-	DO i=1 to 5;
+	DO i=1 TO 5;
 	IF decades(i)=. THEN decades(i)=0;
 	END;
 RUN;
@@ -281,11 +281,11 @@ RUN;
 
 * STEP 10;
 
-/* a */
+* A;
 PROC CONTENTS DATA = FinalData;
 RUN;
 
-/* b */
+* B;
 PROC EXPORT DATA = FinalData
 	OUTFILE = "J:\FinalData.csv"
 	DBMS = CSV
