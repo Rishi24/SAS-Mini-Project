@@ -1,212 +1,208 @@
-* STEP 1;
+/*SAS MINI-Project*/
+/*Group # 5*/
+
+FILENAME Foreign "J:\SAS PROJECT\us_foreign_assistance.txt";
+FILENAME wdicount "J:\SAS PROJECT\WDI_csv\WDI_Country.csv";
+FILENAME wdidat "J:\SAS PROJECT\WDI_csv\WDI_Data.csv";
+
+
+/************part 1************/
 
 PROC IMPORT OUT= WORK.US_FA_raw 
-            DATAFILE= "J:\SAS PROJECT\us_foreign_assistance.txt" 
+            DATAFILE= foreign
             DBMS=TAB REPLACE;
      GETNAMES=YES;
      DATAROW=2; 
      GUESSINGROWS=10000; 
-RUN;
+RUN;  * Important wizard code that uses 10000 rows to guess variable types from a tab delimited (.txt) final. Notably fiscal_year is read in as a character variable, but we want it to be numeric;
 
 DATA US_Fa_raw;
 	SET US_Fa_raw;
-	fiscal_year_num=INPUT(fiscal_year,4.);
-	DROP fiscal_year;
-RUN;
+	fiscal_year_num=input(fiscal_year,4.); *This step converts fiscal_year from a character variable to a numeric variable named fiscal_year_num and uses 4. (w.) informat;
+	DROP fiscal_year; *drop character values for year;
+run;
 
-**********
 
-* STEP 2;
 
-* A;
-PROC SQL PRINT; 
-	SELECT count(distinct Program_name) AS CNT_Program
+
+/************part 2************/
+
+*a;
+
+PROC SQL PRINT; /*procedure to open a sql connection to the sas Data set Us_fa_raw. Following until QUiT are commands in SQL language*/
+	SELECT count(distinct Program_name) AS CNT_Program /*extracts data from table as distinct counts of program name and reads it in CNT_program*/
 	FROM Us_Fa_raw;
-QUIT; /* 22 unique values exist for program name */
+QUIT; *Ends sql connection to data set;
+*22 unique values exist for program name;
 
 
-* B;
-PROC SQL PRINT OUTOBS=10;
-	CREATE TABLE Counts As
-	SELECT count(distinct Program_name) AS CNT_Program,
+*b;
+
+PROC SQL PRINT OUTOBS=10; /*procedure to open a sql connection to the sas Data set Us_fa_raw. Following until QUiT are commands in SQL language. Outputs the top 10 observations*/
+	CREATE TABLE Counts As /*sql commands to create a table of counts*/
+	SELECT count(distinct Program_name) AS CNT_Program, /*selects variable recipient_country and the distinct count of program name*/
        recipient_country AS  recipient_country
 	FROM Us_fa_raw
-	GROUP BY recipient_country
-	ORDER BY CNT_program Desc;
+	GROUP by recipient_country /*grouped by recipient_country*/
+	ORDER by CNT_program Desc; /*orders by decending Program Count*/
 QUIT;
 
+PROC PRINT data=counts;
+	TITLE "Countries with Largest Number of Different Programs";
+	TITLE2 "Since 1946";
+run;
 
-* C;
-PROC MEANS DATA = us_fa_raw NOPRINT;
-	WHERE Fiscal_year_num > 2010;
+*C;
+PROC MEANS DATA=us_fa_raw NOPRINT ;
+	WHERE (Fiscal_year_num > 2010) and (Unit_name="Constant 2011 $US"); /*identifies subset of data where fiscal year is greater than 2010 and unit name is constant 2011 $us*/
 	VAR Obligations___US_;
-	CLASS Program_name;
-	OUTPUT OUT = Funding sum(Obligations___US_)= total_funding;
-RUN;
+	CLASS Program_name; /*grouped by program_name*/
+	OUTPUT OUT=Funding sum(Obligations___US_)= total_funding; /*outputs the sum of obligations___US into a data set called Funding with variable total_funding as the sum*/
+run;
 
 DATA funding;
 	SET funding;
-	IF _type_= 0 THEN delete;
-RUN;
+	IF _type_= 0 then delete; /* variable _type_ added from proc means, deleted since not necessary for analysis*/
+run;
 
-PROC SORT DATA = funding;
-	BY descending total_funding;
-RUN;
 
-PROC PRINT DATA = funding (obs=3);
+PROC SORT DATA=funding;
+	BY descending total_funding; /* sort funding by descending total funding*/
+run;
+
+PROC PRINT data=funding (obs=3);
 	VAR program_name Total_funding;
-RUN;
+	TITLE "PROGRAMS WITH MOST FUNDING";
+	TITLE2 "Since 2010";
+run;
+
+*D;
+PROC MEANS data=Us_fa_raw NOPRINT;
+	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US"); /*subsets data to only include recipient_country as speicifed and Constant 2001 $us as unit name*/
+	OUTPUT out= sumobs sum(Obligations___US_)=total_obligs; /*outputs sum of obligations___us_ as total_obligs to new data set sumobs*/
+	BY Recipient_country fiscal_year_num; /*analysis by recipient country and fiscal_year_num*/
+run;
 
 
-* D;
-
-DATA Fiscal_TS;
-	SET Us_fa_raw;
-	WHERE Recipient_country IN ("Asia (not specified)"  "Middle East & North Afric") AND Unit_Name= ("Constant 2011 $US");
-	KEEP Recipient_country Unit_name Obligations___US_ FISCAL_year_num;
-RUN;  
-
-PROC SORT DATA = Us_fa_raw;
-	BY Recipient_country fiscal_year_num;
-RUN;
-
-PROC MEANS DATA = Us_fa_raw NOPRINT;
-	WHERE Recipient_country IN ("Asia (not specified)"  "Middle East & North Afric") AND Unit_Name= ("Constant 2011 $US");
-	OUTPUT OUT = sumobs sum(Obligations___US_) = total_obligs;
-	BY Recipient_country fiscal_year_num;
-RUN;
-
-PROC SGPANEL DATA = sumobs;
+proc sgpanel data=sumobs; /*creates 2 time series plots on same output window paneled by recipient country*/
 	PANELBY Recipient_country;
 	SERIES x=fiscal_year_num y=total_obligs;
 	LABEL total_obligs= "Obligations in 2011 $US" fiscal_year_num="fiscal Year";
 	TITLE "Funding Obligation over time";
 	TITLE2 "By region";
+run;
+
+
+
+
+/************part 3************/
+
+/*Economic*/
+
+DATA Economic; /*creates data set economics consisting of us_fa_raw subset where assistance type is only economic and unit_name*/
+	SET US_Fa_raw; 
+	WHERE (Assistance_Type = 'Economic') and (Unit_Name = 'Constant 2011 $US'); 
 RUN;
 
-**********
 
-* STEP 3;
-
-DATA Economic;
+DATA Military; /*creates data set military consisting of us_fa_raw subset where assistance type is only military and unit_name*/
 	SET US_Fa_raw;
-	WHERE (Assistance_Type = 'Economic') AND (Unit_Name = 'Constant 2011 $US');
+	WHERE (Assistance_Type = 'Military') and (Unit_Name = 'Constant 2011 $US');
 RUN;
 
 
-DATA Military;
-	SET US_Fa_raw;
-	WHERE (Assistance_Type = 'Military') AND (Unit_Name = 'Constant 2011 $US');
-RUN;
 
-**********
-
-* STEP 4;
-
-DATA Economic2;
+/************part 4************/
+DATA Economic2; /*this data step creates new variable for each decade and removes fiscal years outside the scope of analysis (i.e earlier than 1960 or later than 2010*/
 	SET economic;
-	IF fiscal_year_num <= 1960 THEN delete;
-	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10=sum(Obligations___US_);
-	ELSE DELETE;
+	IF fiscal_year_num <= 1960 then delete; 
+	ELSE IF fiscal_year_num in (1961:1970) then dec61_70=sum(Obligations___US_); /*each decade is set to the sum of obligations in that decade*/
+	Else IF fiscal_year_num in (1971:1980) then dec71_80=sum(Obligations___US_);
+	Else IF fiscal_year_num in (1981:1990) then dec81_90=sum(Obligations___US_);
+	Else IF fiscal_year_num in (1991:2000) then dec91_00=sum(Obligations___US_);
+	ELSE if fiscal_year_num in (2001:2010) then dec01_10=sum(Obligations___US_);
+	ELSE  delete;
 RUN;
 
-PROC SORT DATA = economic2;
-	BY recipient_country dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
-RUN;
-
-DATA economic2;
+DATA economic2; /*this data step cleans up all the missing values and converts them to 0*/
 	SET economic2;
-	ARRAY decade (5) dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
-	DO i=1 TO 5;
-	IF decade(i)=. THEN decade(i)=0;
+	ARRAY decade (5) dec61_70 dec71_80 dec81_90 dec91_00 dec01_10; /* array of decades allows us to efficiently clean up sas missing numeric values with a DO loop*/
+	DO i=1 to 5;
+	IF decade(i)=. THEN decade(i)=0; /* if for any decade a value of . exists it is then coverted to a 0*/
 	END;
-RUN;
+	DROP i; /*drops counter variable*/
+run;
 
-PROC MEANS DATA = economic2 noprint MISSING;
-	OUTPUT OUT = Econ3 sum(dec61_70 dec71_80 dec81_90 dec91_00 dec01_10) = / AUTONAME;
+PROC MEANS data = economic2 noprint MISSING;
+	OUTPUT out=Econ3 sum(dec61_70 dec71_80 dec81_90 dec91_00 dec01_10) =dec61_70E dec71_80E dec81_90E dec91_00E dec01_10E; /*outputs data set of sum of obligations for each decade by recipient country, where the E on the end of decade variable names indicates economic assistance*/
 	BY recipient_country;
-RUN;
+run;
 
-DATA econ3;
+DATA econ3; /*Final data set for economic assistance*/
 	SET econ3;
-	DROP _TYPE_ _freq_;
-RUN;
+	DROP _TYPE_ _freq_; 
+run;
+
+
 
 /*Military*/
+/*what follows below exactly mirrors what steps are done above for economic assistance*/
 
 DATA Milt2;
 	SET Military;
-	IF fiscal_year_num <= 1960 THEN delete;
-	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00m=sum(Obligations___US_);
-	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10m=sum(Obligations___US_);
-	ELSE DELETE;
+	IF fiscal_year_num <= 1960 then delete;
+	ELSE IF fiscal_year_num in (1961:1970) then dec61_70m=sum(Obligations___US_);
+	Else IF fiscal_year_num in (1971:1980) then dec71_80m=sum(Obligations___US_); /*m at the end of decade variable is for military assistance*/
+	Else IF fiscal_year_num in (1981:1990) then dec81_90m=sum(Obligations___US_);
+	Else IF fiscal_year_num in (1991:2000) then dec91_00m=sum(Obligations___US_);
+	ELSE if fiscal_year_num in (2001:2010) then dec01_10m=sum(Obligations___US_);
+	ELSE  delete;
 RUN;
 
-PROC SORT DATA = milt2;
+PROC SORT data=milt2;
 	BY recipient_country dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m;
-RUN;
+run;
 
-DATA milt2;
+data milt2;
 	SET milt2;
 	ARRAY decade (5) dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m;
-	DO i=1 TO 5;
+	DO i=1 to 5;
 	IF decade(i)=. THEN decade(i)=0;
 	END;
-RUN;
+	DROP i;
+run;
 
-PROC MEANS DATA = milt2 noprint MISSING;
-	OUTPUT OUT = milt3 sum(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = / AUTONAME;
+PROC MEANS data = milt2 noprint MISSING;
+	OUTPUT out=milt3 sum(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m ;
 	BY recipient_country;
-RUN;
+run;
 
-DATA milt3;
+
+data milt3; /*final military assistance data set*/
 	SET milt3;
 	DROP _TYPE_ _freq_;
-RUN;
+run;
 
-**********
 
-* STEP 5;
-
-DATA US_FA;
+/************part 5************/
+data US_FA; /*merges military assistance data set and economic asstance data set by recipient_country into new Us_FA data set*/
 	MERGE Milt3 Econ3;
 	BY Recipient_country;
-RUN;
+run;
 
-DATA US_Fa;
-	SET us_fa;
-	ARRAY decades (*) dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
-	DO i=1 TO 5;
-	IF decades(i)=. THEN decades(i)=0;
-	END;
-RUN;
 
-**********
 
-* STEP 6;
+/************part 6************/
 
-* A;
-FILENAME wdicount "J:\SAS PROJECT\WDI_csv\WDI_Country.csv";
-PROC IMPORT OUT = WDI_Country (keep=Country_Code Region Short_Name)
+/* a */
+PROC IMPORT OUT = WDI_Country (keep=Country_Code Region Short_Name) /* import wizard proc import for reading in csv file*/
             DATAFILE = wdicount
             DBMS = CSV REPLACE;
      GUESSINGROWS = 300; 
-RUN;
+RUN; 
 
-PROC PRINT DATA = WDI_Country;
-	TITLE "Checking WDI Country Data";
-RUN;
-
-* B;
-FILENAME wdidat "J:\SAS PROJECT\WDI_csv\WDI_Data.csv";
-PROC IMPORT OUT = WDI_Data_Main
+/* b */
+PROC IMPORT OUT = WDI_Data_Main /* import wizard proc import for reading in csv file*/
 			DATAFILE = wdidat
 			DBMS = CSV REPLACE;
 	GETNAMES = YES;
@@ -214,57 +210,52 @@ PROC IMPORT OUT = WDI_Data_Main
 	GUESSINGROWS = 10000;
 RUN;
 
-DATA WDI_Data_Clean;
+DATA WDI_Data_Clean; /*cleans data by only outputing indicator code for life exp at birth*/
 	SET WDI_Data_Main;
 	IF Indicator_Code = "SP.DYN.LE00.IN" THEN OUTPUT;
 RUN;
 
-DATA WDI_Data (drop=Country_Name Indicator_Name Indicator_Code);
+DATA WDI_Data (drop=Country_Name Indicator_Name Indicator_Code); /*drops variable unecessary for analysis*/
 	SET WDI_Data_Clean;
 RUN;
 
-PROC PRINT DATA = WDI_Data;
-	TITLE "Checking WDI Data";
-RUN;
 
-**********
-
-* STEP 7;
-PROC SORT DATA = WDI_Data;
+/************part 7************/
+PROC SORT DATA = WDI_Data; /* sorts WDI_data by Country_code*/
 	BY Country_Code;
 RUN;
 
-DATA wdi_data;
-	SET wdi_data;
-	ARRAY cleaning (*) _1961 _1962 _1963 _1964 _1965 _1966 _1967  _1968 _1969 _1970 _1971 _1972 _1973 _1974 _1975 _1976 _1977 _1978 _1979 _1980 _1981 _1982 _1983 _1984  _1985 _1986  _1987 _1988 _1989 _1990 _1991 _1992 _1993 _1994  _1995 _1996  _1997 _1998 _1999 _2000  _2001 _2002 _2003 _2004  _2005 _2006  _2007 _2008 _2009 _2010;
-	DO i=1 TO 50;
-	IF cleaning(i)=. THEN cleaning(i)=0;
+data wdi_data; /*this data step uses an array to clean missing sas numeric values and converts them to 0s*/
+	set wdi_data;
+	ARRAY cleaning (*) _1961 _1962 _1963 _1964 _1965 _1966 _1967  _1968 _1969 _1970 _1971 _1972 _1973 _1974 _1975 _1976 _1977 _1978 _1979 _1980 _1981 _1982 _1983 _1984  _1985 _1986  _1987 _1988 _1989 _1990 _1991 _1992 _1993 _1994  _1995 _1996  _1997 _1998 _1999 _2000  _2001 _2002 _2003 _2004  _2005 _2006  _2007 _2008 _2009 _2010; /*array of every year*/
+	DO i=1 to 50;
+	if cleaning(i)=. then cleaning(i)=0; /*in cleaning array every value of . gets changed to 0*/
 	END;
-RUN;
+	DROP I; /*drops counter variable*/
+run;
 
-DATA wdi_data;
-SET Wdi_data;
-	AVG_LE_60s = (_1961 + _1962 + _1963 + _1964 + _1965 + _1966 + _1967 +  _1968 + _1969 + _1970)/10;
+data wdi_data;
+set Wdi_data; /*creates new variable of average life exp for each decade by summing life exp for each deacade and dividing by 10*/
+	AVG_LE_60s= (_1961 + _1962 + _1963 + _1964 + _1965 + _1966 + _1967 +  _1968 + _1969 + _1970)/10; 
 	AVG_LE_70s = (_1970 + _1971 + _1972 + _1973 + _1974 + _1975 + _1976 + _1977 + _1978 + _1979 + _1980)/10;
-	AVG_LE_80s = (_1981 + _1982 + _1983 + _1984 +  _1985 + _1986 +  _1987 + _1988 + _1989 + _1990)/10;
+	AVG_LE_80s=  (_1981 + _1982 + _1983 + _1984 +  _1985 + _1986 +  _1987 + _1988 + _1989 + _1990)/10;
 	AVG_LE_90s = (_1990 + _1991 + _1992 + _1993 + _1994 +  _1995 + _1996 +  _1997 + _1998 + _1999 + _2000)/10;
 	AVG_LE_00s = (_2000 +  _2001 + _2002 + _2003 + _2004 +  _2005 + _2006 +  _2007 + _2008 + _2009 + _2010)/10;
-	KEEP AVG_LE_60s AVG_LE_70s AVG_LE_80s AVG_LE_90s AVG_LE_00s Country_Code;
-RUN;
+	Keep AVG_LE_60s AVG_LE_70s AVG_LE_80s AVG_LE_90s AVG_LE_00s Country_Code; /*only keeps variables needed for analysis*/
+run;
 
-**********
 
-* STEP 8;
-PROC SORT DATA = WDI_Data;
+/************part 8************/
+PROC SORT DATA = WDI_Data; /*sort WDI_data by country_code in prep for merge*/
 	BY Country_Code;
 RUN;
 
-PROC SORT DATA = WDI_Country;
+PROC SORT DATA = WDI_Country; /*sorts WDI_country by country_code in prep for merge*/
 	BY Country_Code;
 RUN;
 
 DATA WDI;
-	MERGE WDI_Data WDI_Country;
+	MERGE WDI_Data WDI_Country; /*merges Wdi_data and Wdi_Country by Country_code*/
 	BY Country_Code;
 RUN;
 
@@ -272,50 +263,67 @@ PROC PRINT DATA = WDI;
 	TITLE "WDI Merged Data";
 RUN;
 
-**********
 
-* STEP 9;
 
-DATA FINALDATA;
-merge US_FA (IN=A) WDI(IN=B);
-by Short_name;
-IF A and B;
+/************part 9************/
+Proc Sort data=US_FA (RENAME=(Recipient_country=Short_name)); /* renames recipient_country in Us_FA to Short_name in order to match variable name in WDI set*/
+	BY Short_name; /* sorts in prep for merge*/
+run;
+
+PROC SORT data=WDI; /* sort in prep for merge*/
+	BY SHORT_NAME;
+run;
+
+
+/************part 9************/
+
+DATA FINALDATA; 
+	MERGE US_FA (IN=A) WDI(IN=B); /*if Short_name is contained in both Us_FA and WDI then it is outputed to data set FINALDATA*/
+	by Short_name;
+	IF A and B; /*logical operation that evalutes to true if short_name is contained in both Us_FA and WDI*/
 run;
 
 PROC PRINT DATA = FINALDATA;
+	TITLE "Merged By Country Names found In both WDI and US_Fa";
 RUN;
 
 Data US_FA_nomatch;
-merge US_FA (IN=A) WDI(IN=B);
-by Short_name;
-IF (A=1 and B=0);
+	MERGE US_FA (IN=A) WDI(IN=B); /* if short_named is contained in US_FA but not WDI then it is outputed to US_FA_nomatch*/
+	by Short_name;
+	IF (A=1 and B=0); /*logical peration that evalutes to true when Short_name is contained in US_FA but not WDI*/
 run;
 
 PROC PRINT DATA = US_FA_nomatch;
+	TITlE "Country Names in US_Fa Not matched in WDI";
 RUN;
 
-Data WDI_nomatch;
-MERGE WDI (IN=A) US_FA(IN=B);
-BY Short_name;
-IF (A=1 and B=0);
+Data WDI_nomatch; /*if short_name is contained in WDI but not US_FA outputed to data set WDI_nomatch*/
+	MERGE WDI (IN=A) US_FA(IN=B);
+	BY Short_name;
+	IF (A=1 and B=0); /*logical expression that evalues to true when WDI contains a short_name not contaiend in US_FA*/
 RUN;
 
 PROC PRINT DATA = WDI_nomatch;
+	TITLE "Country Names in WDI not matched in US_Fa";
 RUN;
-**********
 
-* STEP 10;
+
+
+
+/************part 10************/
 
 * A;
+
 PROC CONTENTS DATA = FinalData;
 RUN;
 
 * B;
 PROC EXPORT DATA = FinalData
-	OUTFILE = "J:\FinalData.csv"
-	DBMS = CSV
+	OUTFILE = "J:\FinalData.csv" /*outputs finaldata to location on J drive*/
+	DBMS = CSV /*.csv output format*/
 	REPLACE;
 RUN;
+
 
 
 
