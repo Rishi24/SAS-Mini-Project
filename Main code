@@ -12,7 +12,7 @@ DATA US_Fa_raw;
 	SET US_Fa_raw;
 	fiscal_year_num=input(fiscal_year,4.);
 	DROP fiscal_year;
-run;
+RUN;
 
 **********
 
@@ -22,7 +22,7 @@ run;
 PROC SQL PRINT; 
 	SELECT count(distinct Program_name) AS CNT_Program
 	FROM Us_Fa_raw;
-QUIT; *22 unique values exist for program name;
+QUIT; /* 22 unique values exist for program name */
 
 
 * B;
@@ -42,47 +42,47 @@ PROC MEANS DATA=us_fa_raw NOPRINT ;
 	VAR Obligations___US_;
 	CLASS Program_name;
 	OUTPUT OUT=Funding sum(Obligations___US_)= total_funding;
-run;
+RUN;
 
 DATA funding;
 	SET funding;
 	IF _type_= 0 then delete;
-run;
+RUN;
 
-PROC SORT DATA=funding;
+PROC SORT DATA = funding;
 	BY descending total_funding;
-run;
+RUN;
 
-PROC PRINT data=funding (obs=3);
+PROC PRINT DATA = funding (obs=3);
 	VAR program_name Total_funding;
-run;
+RUN;
 
 
 * D;
 
-data Fiscal_TS;
+DATA Fiscal_TS;
 	SET Us_fa_raw;
 	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US");
 	KEEP Recipient_country Unit_name Obligations___US_ FISCAL_year_num;
-run;  
+RUN;  
 
-PROC SORT data=Us_fa_raw;
+PROC SORT DATA = Us_fa_raw;
 	BY Recipient_country fiscal_year_num;
-run;
+RUN;
 
-PROC MEANS data=Us_fa_raw NOPRINT;
+PROC MEANS DATA = Us_fa_raw NOPRINT;
 	WHERE Recipient_country in ("Asia (not specified)"  "Middle East & North Afric") and Unit_Name= ("Constant 2011 $US");
 	OUTPUT out= sumobs sum(Obligations___US_)=total_obligs;
 	BY Recipient_country fiscal_year_num;
-run;
+RUN;
 
-proc sgpanel data=sumobs;
+PROC SGPANEL DATA = sumobs;
 	PANELBY Recipient_country;
 	SERIES x=fiscal_year_num y=total_obligs;
 	LABEL total_obligs= "Obligations in 2011 $US" fiscal_year_num="fiscal Year";
 	TITLE "Funding Obligation over time";
 	TITLE2 "By region";
-run;
+RUN;
 
 **********
 
@@ -90,13 +90,13 @@ run;
 
 DATA Economic;
 	SET US_Fa_raw;
-	WHERE (Assistance_Type = 'Economic') and (Unit_Name = 'Constant 2011 $US');
+	WHERE (Assistance_Type = 'Economic') AND (Unit_Name = 'Constant 2011 $US');
 RUN;
 
 
 DATA Military;
 	SET US_Fa_raw;
-	WHERE (Assistance_Type = 'Military') and (Unit_Name = 'Constant 2011 $US');
+	WHERE (Assistance_Type = 'Military') AND (Unit_Name = 'Constant 2011 $US');
 RUN;
 
 **********
@@ -105,18 +105,18 @@ RUN;
 
 DATA Economic2;
 	SET economic;
-	IF fiscal_year_num <= 1960 then delete;
-	ELSE IF fiscal_year_num in (1961:1970) then dec61_70=sum(Obligations___US_);
-	Else IF fiscal_year_num in (1971:1980) then dec71_80=sum(Obligations___US_);
-	Else IF fiscal_year_num in (1981:1990) then dec81_90=sum(Obligations___US_);
-	Else IF fiscal_year_num in (1991:2000) then dec91_00=sum(Obligations___US_);
-	ELSE if fiscal_year_num in (2001:2010) then dec01_10=sum(Obligations___US_);
-	ELSE  delete;
+	IF fiscal_year_num <= 1960 THEN delete;
+	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10=sum(Obligations___US_);
+	ELSE DELETE;
 RUN;
 
-PROC SORT data=economic2;
+PROC SORT DATA = economic2;
 	BY recipient_country dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
-run;
+RUN;
 
 DATA economic2;
 	SET economic2;
@@ -124,75 +124,75 @@ DATA economic2;
 	DO i=1 to 5;
 	IF decade(i)=. THEN decade(i)=0;
 	END;
-run;
+RUN;
 
-PROC MEANS data = economic2 noprint MISSING;
-	OUTPUT out=Econ3 sum(dec61_70 dec71_80 dec81_90 dec91_00 dec01_10) = / AUTONAME;
+PROC MEANS DATA = economic2 noprint MISSING;
+	OUTPUT OUT = Econ3 sum(dec61_70 dec71_80 dec81_90 dec91_00 dec01_10) = / AUTONAME;
 	BY recipient_country;
-run;
+RUN;
 
 DATA econ3;
 	SET econ3;
 	DROP _TYPE_ _freq_;
-run;
+RUN;
 
 /*Military*/
 
 DATA Milt2;
 	SET Military;
-	IF fiscal_year_num <= 1960 then delete;
-	ELSE IF fiscal_year_num in (1961:1970) then dec61_70m=sum(Obligations___US_);
-	Else IF fiscal_year_num in (1971:1980) then dec71_80m=sum(Obligations___US_);
-	Else IF fiscal_year_num in (1981:1990) then dec81_90m=sum(Obligations___US_);
-	Else IF fiscal_year_num in (1991:2000) then dec91_00m=sum(Obligations___US_);
-	ELSE if fiscal_year_num in (2001:2010) then dec01_10m=sum(Obligations___US_);
-	ELSE  delete;
+	IF fiscal_year_num <= 1960 THEN delete;
+	ELSE IF fiscal_year_num IN (1961:1970) THEN dec61_70m=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1971:1980) THEN dec71_80m=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1981:1990) THEN dec81_90m=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (1991:2000) THEN dec91_00m=sum(Obligations___US_);
+	ELSE IF fiscal_year_num IN (2001:2010) THEN dec01_10m=sum(Obligations___US_);
+	ELSE DELETE;
 RUN;
 
-PROC SORT data=milt2;
+PROC SORT DATA = milt2;
 	BY recipient_country dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m;
-run;
+RUN;
 
-data milt2;
+DATA milt2;
 	SET milt2;
 	ARRAY decade (5) dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m;
-	DO i=1 to 5;
+	DO i=1 TO 5;
 	IF decade(i)=. THEN decade(i)=0;
 	END;
 run;
 
-PROC MEANS data = milt2 noprint MISSING;
-	OUTPUT out=milt3 sum(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = / AUTONAME;
+PROC MEANS DATA = milt2 noprint MISSING;
+	OUTPUT OUT = milt3 sum(dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m) = / AUTONAME;
 	BY recipient_country;
-run;
+RUN;
 
-data milt3;
+DATA milt3;
 	SET milt3;
 	DROP _TYPE_ _freq_;
-run;
+RUN;
 
 **********
 
 * STEP 5;
 
-data US_FA;
+DATA US_FA;
 	MERGE Milt3 Econ3;
 	BY Recipient_country;
-run;
+RUN;
 
-data US_Fa;
+DATA US_Fa;
 	SET us_fa;
 	ARRAY decades (*) dec61_70m dec71_80m dec81_90m dec91_00m dec01_10m dec61_70 dec71_80 dec81_90 dec91_00 dec01_10;
 	DO i=1 to 5;
 	IF decades(i)=. THEN decades(i)=0;
 	END;
-run;
+RUN;
 
 **********
 
 * STEP 6;
 
-/* a */
+* A;
 FILENAME wdicount "J:\SAS PROJECT\WDI_csv\WDI_Country.csv";
 PROC IMPORT OUT = WDI_Country (keep=Country_Code Region Short_Name)
             DATAFILE = wdicount
@@ -204,7 +204,7 @@ PROC PRINT DATA = WDI_Country;
 	TITLE "Checking WDI Country Data";
 RUN;
 
-/* b */
+* B;
 FILENAME wdidat "J:\SAS PROJECT\WDI_csv\WDI_Data.csv";
 PROC IMPORT OUT = WDI_Data_Main
 			DATAFILE = wdidat
@@ -234,23 +234,23 @@ PROC SORT DATA = WDI_Data;
 	BY Country_Code;
 RUN;
 
-data wdi_data;
-	set wdi_data;
+DATA wdi_data;
+	SET wdi_data;
 	ARRAY cleaning (*) _1961 _1962 _1963 _1964 _1965 _1966 _1967  _1968 _1969 _1970 _1971 _1972 _1973 _1974 _1975 _1976 _1977 _1978 _1979 _1980 _1981 _1982 _1983 _1984  _1985 _1986  _1987 _1988 _1989 _1990 _1991 _1992 _1993 _1994  _1995 _1996  _1997 _1998 _1999 _2000  _2001 _2002 _2003 _2004  _2005 _2006  _2007 _2008 _2009 _2010;
-	DO i=1 to 50;
-	if cleaning(i)=. then cleaning(i)=0;
+	DO i=1 TO 50;
+	IF cleaning(i)=. THEN cleaning(i)=0;
 	END;
-run;
+RUN;
 
-data wdi_data;
-set Wdi_data;
-	AVG_LE_60s= (_1961 + _1962 + _1963 + _1964 + _1965 + _1966 + _1967 +  _1968 + _1969 + _1970)/10;
+DATA wdi_data;
+SET Wdi_data;
+	AVG_LE_60s = (_1961 + _1962 + _1963 + _1964 + _1965 + _1966 + _1967 +  _1968 + _1969 + _1970)/10;
 	AVG_LE_70s = (_1970 + _1971 + _1972 + _1973 + _1974 + _1975 + _1976 + _1977 + _1978 + _1979 + _1980)/10;
-	AVG_LE_80s=  (_1981 + _1982 + _1983 + _1984 +  _1985 + _1986 +  _1987 + _1988 + _1989 + _1990)/10;
+	AVG_LE_80s = (_1981 + _1982 + _1983 + _1984 +  _1985 + _1986 +  _1987 + _1988 + _1989 + _1990)/10;
 	AVG_LE_90s = (_1990 + _1991 + _1992 + _1993 + _1994 +  _1995 + _1996 +  _1997 + _1998 + _1999 + _2000)/10;
 	AVG_LE_00s = (_2000 +  _2001 + _2002 + _2003 + _2004 +  _2005 + _2006 +  _2007 + _2008 + _2009 + _2010)/10;
-	Keep AVG_LE_60s AVG_LE_70s AVG_LE_80s AVG_LE_90s AVG_LE_00s Country_Code;
-run;
+	KEEP AVG_LE_60s AVG_LE_70s AVG_LE_80s AVG_LE_90s AVG_LE_00s Country_Code;
+RUN;
 
 **********
 
