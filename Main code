@@ -1,10 +1,12 @@
+* STEP 1;
+
 PROC IMPORT OUT= WORK.US_FA_raw 
             DATAFILE= "J:\SAS PROJECT\us_foreign_assistance.txt" 
             DBMS=TAB REPLACE;
      GETNAMES=YES;
      DATAROW=2; 
      GUESSINGROWS=10000; 
-RUN;  * this is from using the important wizards... I think it has trouble with reading the date but lets fix it later;
+RUN;
 
 DATA US_Fa_raw;
 	SET US_Fa_raw;
@@ -12,19 +14,18 @@ DATA US_Fa_raw;
 	DROP fiscal_year;
 run;
 
+**********
 
+* STEP 2;
 
-*part 2;
-
-*a;
-
+* A;
 PROC SQL PRINT; 
 	SELECT count(distinct Program_name) AS CNT_Program
 	FROM Us_Fa_raw;
 QUIT; *22 unique values exist for program name;
 
 
-*b;
+* B;
 PROC SQL PRINT OUTOBS=10;
 	CREATE TABLE Counts As
 	SELECT count(distinct Program_name) AS CNT_Program,
@@ -35,7 +36,7 @@ PROC SQL PRINT OUTOBS=10;
 QUIT;
 
 
-*C;
+* C;
 PROC MEANS DATA=us_fa_raw NOPRINT ;
 	WHERE Fiscal_year_num > 2010;
 	VAR Obligations___US_;
@@ -48,7 +49,6 @@ DATA funding;
 	IF _type_= 0 then delete;
 run;
 
-
 PROC SORT DATA=funding;
 	BY descending total_funding;
 run;
@@ -57,7 +57,8 @@ PROC PRINT data=funding (obs=3);
 	VAR program_name Total_funding;
 run;
 
-*D;
+
+* D;
 
 data Fiscal_TS;
 	SET Us_fa_raw;
@@ -75,7 +76,6 @@ PROC MEANS data=Us_fa_raw NOPRINT;
 	BY Recipient_country fiscal_year_num;
 run;
 
-
 proc sgpanel data=sumobs;
 	PANELBY Recipient_country;
 	SERIES x=fiscal_year_num y=total_obligs;
@@ -84,11 +84,10 @@ proc sgpanel data=sumobs;
 	TITLE2 "By region";
 run;
 
+**********
 
+* STEP 3;
 
-
-
-*Part 3;
 DATA Economic;
 	SET US_Fa_raw;
 	WHERE (Assistance_Type = 'Economic') and (Unit_Name = 'Constant 2011 $US');
@@ -100,6 +99,9 @@ DATA Military;
 	WHERE (Assistance_Type = 'Military') and (Unit_Name = 'Constant 2011 $US');
 RUN;
 
+**********
+
+* STEP 4;
 
 DATA Economic2;
 	SET economic;
@@ -169,6 +171,10 @@ data milt3;
 	DROP _TYPE_ _freq_;
 run;
 
+**********
+
+* STEP 5;
+
 data US_FA;
 	MERGE Milt3 Econ3;
 	BY Recipient_country;
@@ -182,6 +188,7 @@ data US_Fa;
 	END;
 run;
 
+**********
 
 * STEP 6;
 
@@ -220,6 +227,8 @@ PROC PRINT DATA = WDI_Data;
 	TITLE "Checking WDI Data";
 RUN;
 
+**********
+
 * STEP 7;
 PROC SORT DATA = WDI_Data;
 	BY Country_Code;
@@ -243,6 +252,8 @@ set Wdi_data;
 	Keep AVG_LE_60s AVG_LE_70s AVG_LE_80s AVG_LE_90s AVG_LE_00s Country_Code;
 run;
 
+**********
+
 * STEP 8;
 PROC SORT DATA = WDI_Data;
 	BY Country_Code;
@@ -261,6 +272,12 @@ PROC PRINT DATA = WDI;
 	TITLE "WDI Merged Data";
 RUN;
 
+**********
+
+* STEP 9;
+
+
+**********
 
 * STEP 10;
 
